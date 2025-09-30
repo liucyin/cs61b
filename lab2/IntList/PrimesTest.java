@@ -20,7 +20,7 @@ public class PrimesTest {
 
         boolean changed = IntListExercises.squarePrimes(L);
 
-        assertEquals(expected, L);
+        assertEquals("14 -> 15 -> 16 -> 289 -> 18", L.toString());
         assertTrue(changed);
     }
 }
