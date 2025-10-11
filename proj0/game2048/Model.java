@@ -106,6 +106,60 @@ public class Model extends Observable {
      *    value, then the leading two tiles in the direction of motion merge,
      *    and the trailing tile does not.
      * */
+//    public void HandleSpecificColumn(int col){
+//        for (int row = 0; row <= board.size() - 2; row++) {
+//            Tile t = board.tile(col, row);
+//            int v = board.tile(col, row).value();
+//            for (int x = 1; row + x < board.size(); x++) {
+//                Tile upt = board.tile(col, row + x);
+//                int uptv = upt.value();
+//                if (upt != null && uptv != v) {
+//                    return;
+//                }
+//                if (v == uptv) {
+//                    score += 2 * v;
+//                    board.move(col, row + x, t);
+//                    return ;
+//                }
+//                else {return;}
+//            }
+//        }
+//    }
+    public boolean handleSpecificColumn(int col){
+       boolean changed = false; 
+       int nextFillRow = board.size() - 1;
+       int lastMergeRow = -1;
+       for (int row = board.size() - 1; row > -1; row--) {
+            Tile t = board.tile(col, row);
+            if (t == null) {
+                continue;
+            }
+            if (board.tile(col, nextFillRow) == null) {
+                boolean moved = board.move(col, nextFillRow, t);
+                changed |= moved || (nextFillRow != row);
+                continue;
+            }
+            Tile u = board.tile(col, nextFillRow);
+            if (t == u) {
+                continue;
+            }
+            if (t.value() == u.value() && nextFillRow != lastMergeRow) {
+                boolean merged = board.move(col, nextFillRow, t);
+                if (merged) {
+                    score += 2 * t.value();
+                    lastMergeRow = nextFillRow;
+                    changed = true;
+                }
+                nextFillRow -= 1;
+                continue;
+            }
+            nextFillRow -= 1;
+            boolean moved = board.move(col, nextFillRow, t);
+            changed |= moved || (nextFillRow != row);
+        }
+        return changed;
+    }
+
     public boolean tilt(Side side) {
         boolean changed;
         changed = false;
@@ -113,7 +167,11 @@ public class Model extends Observable {
         // TODO: Modify this.board (and perhaps this.score) to account
         // for the tilt to the Side SIDE. If the board changed, set the
         // changed local variable to true.
-
+        board.setViewingPerspective(side);
+        for (int col = 0; col < board.size(); col++) {
+            changed |= handleSpecificColumn(col);
+        }
+        board.setViewingPerspective(Side.NORTH);
         checkGameOver();
         if (changed) {
             setChanged();
@@ -138,6 +196,13 @@ public class Model extends Observable {
      * */
     public static boolean emptySpaceExists(Board b) {
         // TODO: Fill in this function.
+        for (int i = 0; i < b.size(); i++) {
+            for (int j = 0; j < b.size(); j++) {
+                if (b.tile(i, j) == null) {
+                    return true;
+                }
+            }
+        }
         return false;
     }
 
@@ -146,8 +211,17 @@ public class Model extends Observable {
      * Maximum valid value is given by MAX_PIECE. Note that
      * given a Tile object t, we get its value with t.value().
      */
+
     public static boolean maxTileExists(Board b) {
         // TODO: Fill in this function.
+        for (int i = 0; i < b.size(); i++) {
+            for (int j = 0; j < b.size(); j++) {
+                if  (b.tile(i, j) == null) {continue;}
+                if ((b.tile(i, j)).value() == MAX_PIECE  ) {
+                    return true;
+                }
+            }
+        }
         return false;
     }
 
@@ -157,14 +231,29 @@ public class Model extends Observable {
      * 1. There is at least one empty space on the board.
      * 2. There are two adjacent tiles with the same value.
      */
+
     public static boolean atLeastOneMoveExists(Board b) {
         // TODO: Fill in this function.
+        if (emptySpaceExists(b)) { return true; }
+        for (int i = 0; i < b.size(); i++) {
+            for (int j = 0; j < b.size(); j++) {
+                if (i+1 < b.size()) {
+                    if (b.tile(i, j).value() == b.tile(i + 1, j).value()) {
+                        return true;
+                    }
+                }
+                if (j+1 < b.size()) {
+                    if (b.tile(i, j).value() == b.tile(i, j+1).value()) {
+                        return true;
+                    }
+                }
+            }
+        }
         return false;
     }
 
-
     @Override
-     /** Returns the model as a string, used for debugging. */
+    /** Returns the model as a string, used for debugging. */
     public String toString() {
         Formatter out = new Formatter();
         out.format("%n[%n");
